@@ -4,7 +4,7 @@ import {
 } from 'lucide-react'
 import { Button, confirmDialog, cx, toast } from '../../components/ui'
 import type { SkillFile } from './types'
-import { publishSkill, saveSkillFiles, setEditorDirty, updateSkillInfo, useSkillState } from './store'
+import { publishSkill, saveSkillFiles, setEditorDirty, useSkillState } from './store'
 import { SKILL_MD, extOf, fileSize, formatBytes, joinFrontmatter, parseFrontmatter, relativePath, resolveRelative, setFrontmatterFields, splitFrontmatter, templateForFile, validateSkill } from './spec'
 import { downloadFile, exportSkills, readUploadedFile } from './zip'
 import { userLabel } from './users'
@@ -46,6 +46,9 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
   const skill = skills.find((s) => s.id === skillId)
   const [files, setFiles] = useState<SkillFile[]>(skill?.files ?? [])
   const [dirs, setDirs] = useState<string[]>(skill?.dirs ?? [])
+  const [draftDisplayName, setDraftDisplayName] = useState(skill?.displayName ?? '')
+  const [draftFolderId, setDraftFolderId] = useState<string | null>(skill?.folderId ?? null)
+  const [draftOwner, setDraftOwner] = useState(skill?.owner ?? '')
   const [activePath, setActivePath] = useState(SKILL_MD)
   const [selectedDir, setSelectedDir] = useState<string | null>(null)
   const [sourceMode, setSourceMode] = useState(false)
@@ -65,7 +68,7 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
   const workspaceDirs = historyVersion?.dirs ?? dirs
   const editable = mode === 'edit' && !historyVersion
 
-  const dirty = useMemo(() => !!skill && (JSON.stringify(files) !== JSON.stringify(skill.files) || JSON.stringify([...dirs].sort()) !== JSON.stringify([...skill.dirs].sort())), [files, dirs, skill])
+  const dirty = useMemo(() => !!skill && (JSON.stringify(files) !== JSON.stringify(skill.files) || JSON.stringify([...dirs].sort()) !== JSON.stringify([...skill.dirs].sort()) || draftDisplayName !== skill.displayName || draftFolderId !== skill.folderId || draftOwner !== skill.owner), [files, dirs, skill, draftDisplayName, draftFolderId, draftOwner])
   const dirtyPaths = useMemo(() => {
     const set = new Set<string>()
     for (const f of files) {
@@ -98,6 +101,9 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
     if (!dirty) {
       setFiles(skill.files)
       setDirs(skill.dirs)
+      setDraftDisplayName(skill.displayName)
+      setDraftFolderId(skill.folderId)
+      setDraftOwner(skill.owner)
     }
   }, [skill, dirty])
 
@@ -111,7 +117,7 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
   const draftName = typeof fm.data.name === 'string' && fm.data.name ? fm.data.name : (historyVersion?.name ?? skill?.name ?? '')
   const draftDesc = typeof fm.data.description === 'string' ? fm.data.description : (historyVersion?.description ?? skill?.description ?? '')
   const current = workspaceFiles.find((f) => f.path === activePath) ?? md
-  const publishable = !currentVersion || draftName !== currentVersion.name || draftDesc !== currentVersion.description || JSON.stringify(files) !== JSON.stringify(currentVersion.files) || JSON.stringify([...dirs].sort()) !== JSON.stringify([...currentVersion.dirs].sort())
+  const publishable = !currentVersion || draftName !== currentVersion.name || draftDesc !== currentVersion.description || draftDisplayName !== currentVersion.displayName || draftFolderId !== currentVersion.folderId || draftOwner !== currentVersion.owner || JSON.stringify(files) !== JSON.stringify(currentVersion.files) || JSON.stringify([...dirs].sort()) !== JSON.stringify([...currentVersion.dirs].sort())
   const allPaths = useMemo(() => new Set([...files.map((f) => f.path), ...dirs, ...files.flatMap((f) => f.path.split('/').slice(0, -1).map((_, i, a) => a.slice(0, i + 1).join('/')))]), [files, dirs])
 
   const save = useCallback(() => {
@@ -125,10 +131,10 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
       toast(`保存失败：${details}`, 'error')
       return
     }
-    saveSkillFiles(skill.id, files, dirs)
+    saveSkillFiles(skill.id, files, dirs, { displayName: draftDisplayName, folderId: draftFolderId, owner: draftOwner })
     lastSynced.current = undefined
     toast('保存成功')
-  }, [skill, errors, checks, files, dirs, draftName])
+  }, [skill, errors, checks, files, dirs, draftName, draftDisplayName, draftFolderId, draftOwner])
 
   const publish = useCallback(() => {
     if (!skill || !publishable) return
@@ -141,12 +147,12 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
       toast(`发布失败：${details}`, 'error')
       return
     }
-    const version = publishSkill(skill.id, files, dirs)
+    const version = publishSkill(skill.id, files, dirs, { displayName: draftDisplayName, folderId: draftFolderId, owner: draftOwner })
     if (!version) return
     lastSynced.current = undefined
     onModeChange('view')
     toast(`发布成功，当前线上版本为 v${version.version}`)
-  }, [skill, errors, checks, files, dirs, publishable, draftName, onModeChange])
+  }, [skill, errors, checks, files, dirs, publishable, draftName, draftDisplayName, draftFolderId, draftOwner, onModeChange])
 
   useEffect(() => {
     if (!active) return
@@ -164,7 +170,7 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
     return () => window.removeEventListener('keydown', h)
   }, [active, editable, save, activePath])
 
-  const infoSkill = useMemo(() => (skill ? { ...skill, name: draftName, description: draftDesc } : null), [skill, draftName, draftDesc])
+  const infoSkill = useMemo(() => (skill ? { ...skill, name: draftName, displayName: draftDisplayName, description: draftDesc, folderId: draftFolderId, owner: draftOwner } : null), [skill, draftName, draftDesc, draftDisplayName, draftFolderId, draftOwner])
 
   if (!skill) return <div className="h-full flex items-center justify-center text-muted">技能不存在或已被删除</div>
 
@@ -303,6 +309,9 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
       if (!ok) return
       setFiles(skill.files)
       setDirs(skill.dirs)
+      setDraftDisplayName(skill.displayName)
+      setDraftFolderId(skill.folderId)
+      setDraftOwner(skill.owner)
     }
     onModeChange('view')
   }
@@ -313,7 +322,10 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
     if (!ok) return
     setFiles(currentVersion.files)
     setDirs(currentVersion.dirs)
-    saveSkillFiles(skill.id, currentVersion.files, currentVersion.dirs)
+    setDraftDisplayName(currentVersion.displayName)
+    setDraftFolderId(currentVersion.folderId)
+    setDraftOwner(currentVersion.owner)
+    saveSkillFiles(skill.id, currentVersion.files, currentVersion.dirs, { displayName: currentVersion.displayName, folderId: currentVersion.folderId, owner: currentVersion.owner })
     lastSynced.current = undefined
     setActivePath(SKILL_MD)
     setSelectedDir(null)
@@ -337,7 +349,7 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-[15px] font-semibold text-ink truncate">{skill.displayName || draftName}</span>
+            <span className="text-[15px] font-semibold text-ink truncate">{historyVersion?.displayName || draftDisplayName || draftName}</span>
             {historyVersion && <span className="shrink-0 font-mono text-[12px] text-muted">v{historyVersion.version}</span>}
             <span className={cx('shrink-0 px-1.5 h-[20px] leading-[20px] rounded-[2px] text-[11px]', historyVersion ? (viewingOnline ? 'bg-[#E8F7EE] text-[#12A150]' : 'bg-canvas text-muted') : 'bg-accent-soft text-accent')}>
               {historyVersion ? (viewingOnline ? '线上版本' : '历史版本') : '草稿版本'}
@@ -360,7 +372,7 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
                   <div className="absolute left-0 top-full z-30 hidden pt-2 group-hover/info:block group-focus-within/info:block">
                     <div className="w-[240px] rounded-[4px] border border-line bg-white p-3 shadow-lg grid grid-cols-[64px_1fr] gap-y-1.5 text-[12px] leading-5 text-ink">
                       <span className="text-muted">发布人：</span><span>{userLabel(historyVersion.publishedBy)}</span>
-                      <span className="text-muted">负责人：</span><span>{userLabel(skill.owner)}</span>
+                      <span className="text-muted">负责人：</span><span>{userLabel(historyVersion.owner)}</span>
                       <span className="text-muted">创建人：</span><span>{userLabel(skill.owner)}</span>
                       <span className="text-muted">创建时间：</span><span>{formatTime(skill.createdAt)}</span>
                       <span className="text-muted">修改人：</span><span>{userLabel(historyVersion.updatedBy)}</span>
@@ -587,8 +599,10 @@ export default function SkillEditorPage({ skillId, active, mode, onModeChange, o
         onSubmit={(input) => {
           setInfoOpen(false)
           setFiles((fs) => fs.map((f) => (f.path === SKILL_MD ? { ...f, content: setFrontmatterFields(f.content, { name: skill.name, description: input.description }) } : f)))
-          updateSkillInfo(skill.id, { ...input, name: skill.name })
-          toast('基本信息已更新')
+          setDraftDisplayName(input.displayName)
+          setDraftFolderId(input.folderId)
+          setDraftOwner(input.owner)
+          toast('基本信息已更新，发布后生效')
         }}
       />
       <VersionDrawer

@@ -18,7 +18,10 @@ function normalizeState(value: Omit<SkillState, 'versions'> & { versions?: Skill
     skillId: s.id,
     version: 1,
     name: s.name,
+    displayName: s.displayName ?? s.name,
     description: s.description,
+    folderId: s.folderId,
+    owner: s.owner,
     files: s.files,
     dirs: s.dirs,
     updatedBy: s.updatedBy,
@@ -27,6 +30,9 @@ function normalizeState(value: Omit<SkillState, 'versions'> & { versions?: Skill
     publishedAt: s.updatedAt,
   }))).map((v) => ({
     ...v,
+    displayName: v.displayName ?? value.skills.find((s) => s.id === v.skillId)?.displayName ?? v.name,
+    folderId: v.folderId ?? value.skills.find((s) => s.id === v.skillId)?.folderId ?? null,
+    owner: v.owner ?? value.skills.find((s) => s.id === v.skillId)?.owner ?? '',
     updatedBy: v.updatedBy ?? v.publishedBy,
     updatedAt: v.updatedAt ?? v.publishedAt,
   }))
@@ -166,7 +172,7 @@ export function patchSkill(id: string, patch: Partial<Pick<Skill, 'folderId' | '
 }
 
 /** Persist the editor working copy; description is derived from SKILL.md and name stays immutable. */
-export function saveSkillFiles(id: string, files: SkillFile[], dirs: string[]) {
+export function saveSkillFiles(id: string, files: SkillFile[], dirs: string[], info?: Pick<Skill, 'displayName' | 'folderId' | 'owner'>) {
   const md = files.find((f) => f.path === SKILL_MD)
   const fm = md ? parseFrontmatter(md.content) : null
   commit({
@@ -175,6 +181,9 @@ export function saveSkillFiles(id: string, files: SkillFile[], dirs: string[]) {
       s.id === id
         ? {
             ...s,
+            displayName: info?.displayName ?? s.displayName,
+            folderId: info?.folderId ?? s.folderId,
+            owner: info?.owner ?? s.owner,
             name: s.name,
             description: typeof fm?.data.description === 'string' ? fm.data.description : s.description,
             files,
@@ -187,7 +196,7 @@ export function saveSkillFiles(id: string, files: SkillFile[], dirs: string[]) {
   })
 }
 
-export function publishSkill(id: string, files: SkillFile[], dirs: string[]) {
+export function publishSkill(id: string, files: SkillFile[], dirs: string[], info?: Pick<Skill, 'displayName' | 'folderId' | 'owner'>) {
   const skill = state.skills.find((s) => s.id === id)
   if (!skill) return null
   const now = Date.now()
@@ -198,7 +207,10 @@ export function publishSkill(id: string, files: SkillFile[], dirs: string[]) {
     skillId: id,
     version: Math.max(0, ...state.versions.filter((v) => v.skillId === id).map((v) => v.version)) + 1,
     name: skill.name,
+    displayName: info?.displayName ?? skill.displayName,
     description: typeof fm?.data.description === 'string' ? fm.data.description : skill.description,
+    folderId: info?.folderId ?? skill.folderId,
+    owner: info?.owner ?? skill.owner,
     files: files.map((f) => ({ ...f })),
     dirs: [...dirs],
     updatedBy: CURRENT_USER.id,
@@ -208,7 +220,7 @@ export function publishSkill(id: string, files: SkillFile[], dirs: string[]) {
   }
   commit({
     ...state,
-    skills: state.skills.map((s) => (s.id === id ? { ...s, name: version.name, description: version.description, files: version.files, dirs: version.dirs, currentVersion: version.version, publishedBy: CURRENT_USER.id, updatedAt: now, updatedBy: CURRENT_USER.id } : s)),
+    skills: state.skills.map((s) => (s.id === id ? { ...s, name: version.name, displayName: version.displayName, description: version.description, folderId: version.folderId, owner: version.owner, files: version.files, dirs: version.dirs, currentVersion: version.version, publishedBy: CURRENT_USER.id, updatedAt: now, updatedBy: CURRENT_USER.id } : s)),
     versions: [...state.versions, version],
   })
   return version

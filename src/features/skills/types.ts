@@ -35,7 +35,10 @@ export interface SkillVersion {
   skillId: string
   version: number
   name: string
+  displayName: string
   description: string
+  folderId: string | null
+  owner: string
   files: SkillFile[]
   dirs: string[]
   updatedBy: string

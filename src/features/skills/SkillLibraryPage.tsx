@@ -33,7 +33,7 @@ export default function SkillLibraryPage({ onOpenSkill }: { onOpenSkill: (id: st
           .filter((s) => {
             const published = versions.find((v) => v.skillId === s.id && v.version === s.currentVersion)
             if (!published) return true
-            return published.name !== s.name || published.description !== s.description || JSON.stringify(published.files) !== JSON.stringify(s.files) || JSON.stringify([...published.dirs].sort()) !== JSON.stringify([...s.dirs].sort())
+            return published.name !== s.name || published.displayName !== s.displayName || published.description !== s.description || published.folderId !== s.folderId || published.owner !== s.owner || JSON.stringify(published.files) !== JSON.stringify(s.files) || JSON.stringify([...published.dirs].sort()) !== JSON.stringify([...s.dirs].sort())
           })
           .map((s) => s.id),
       ),
