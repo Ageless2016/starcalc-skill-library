@@ -1,0 +1,10 @@
+{
+  "description": "管理 Agent Skill 的工作空间，支持按名称或负责人查找技能、维护目录，并创建、编辑、导入、导出及在线管理符合标准规范的技能文件。",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

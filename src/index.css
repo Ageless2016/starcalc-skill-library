@@ -1,0 +1,65 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-brand: #1b4c9c;
+  --color-brand-hover: #163f84;
+  --color-accent: #f26b1d;
+  --color-accent-soft: #fff3eb;
+  --color-link: #1d5bd6;
+  --color-ink: #1f2329;
+  --color-muted: #646a73;
+  --color-faint: #a8adb5;
+  --color-line: #e5e6eb;
+  --color-canvas: #f7f8fa;
+  --font-sans: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background: #fff;
+    -webkit-font-smoothing: antialiased;
+    font-size: 13px;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d9dce1;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #c2c6cc;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}

@@ -1,0 +1,62 @@
+/* Milkdown Crepe themed to the platform (brand blue, PingFang/YaHei, 14px reading size). */
+.skill-md .milkdown {
+  --crepe-color-background: #ffffff;
+  --crepe-color-on-background: #1f2329;
+  --crepe-color-surface: #f7f8fa;
+  --crepe-color-surface-low: #f2f3f5;
+  --crepe-color-on-surface: #1f2329;
+  --crepe-color-on-surface-variant: #646a73;
+  --crepe-color-outline: #c9cdd4;
+  --crepe-color-primary: #1b4c9c;
+  --crepe-color-secondary: #e8eef8;
+  --crepe-color-on-secondary: #1b4c9c;
+  --crepe-color-inverse: #f2f3f5;
+  --crepe-color-on-inverse: #1f2329;
+  --crepe-color-inline-code: #c7254e;
+  --crepe-color-error: #e5484d;
+  --crepe-color-hover: #f2f3f5;
+  --crepe-color-selected: rgba(27, 76, 156, 0.16);
+  --crepe-color-inline-area: #eef0f3;
+  --crepe-base-font-size: 14px;
+  --crepe-font-title: var(--font-sans);
+  --crepe-font-default: var(--font-sans);
+  --crepe-font-code: var(--font-mono);
+  --crepe-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.12);
+  --crepe-shadow-2: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.skill-md .milkdown .ProseMirror {
+  padding: 20px 56px 120px;
+  line-height: 1.75;
+}
+
+.skill-md .milkdown .ProseMirror h1,
+.skill-md .milkdown .ProseMirror h2,
+.skill-md .milkdown .ProseMirror h3,
+.skill-md .milkdown .ProseMirror h4,
+.skill-md .milkdown .ProseMirror h5,
+.skill-md .milkdown .ProseMirror h6 {
+  font-weight: 600;
+  color: #1f2329;
+}
+.skill-md .milkdown .ProseMirror h1 { font-size: 24px; line-height: 1.4; margin-top: 20px; }
+.skill-md .milkdown .ProseMirror h2 { font-size: 20px; line-height: 1.45; margin-top: 18px; }
+.skill-md .milkdown .ProseMirror h3 { font-size: 17px; line-height: 1.5; margin-top: 16px; }
+.skill-md .milkdown .ProseMirror h4 { font-size: 15px; line-height: 1.5; margin-top: 14px; }
+.skill-md .milkdown .ProseMirror h5 { font-size: 14px; line-height: 1.5; margin-top: 12px; }
+.skill-md .milkdown .ProseMirror h6 { font-size: 14px; line-height: 1.5; margin-top: 12px; color: #646a73; }
+.skill-md .milkdown .ProseMirror p { line-height: 1.75; padding: 3px 0; }
+.skill-md .milkdown .ProseMirror code { display: inline; line-height: inherit; padding: 1px 4px; }
+.skill-md .milkdown .ProseMirror a { color: #1d5bd6; text-decoration: none; }
+.skill-md .milkdown .ProseMirror a:hover { text-decoration: underline; }
+.skill-md .milkdown .ProseMirror blockquote { padding-left: 16px; color: #646a73; }
+.skill-md .milkdown .ProseMirror blockquote::before { width: 3px; background: #d0d3d9; }
+.skill-md .milkdown .ProseMirror hr { border-color: #e5e6eb; }
+
+/* read-only view: no block handles / slash / selection toolbar */
+.skill-md.is-readonly .milkdown .milkdown-block-handle,
+.skill-md.is-readonly .milkdown .milkdown-slash-menu,
+.skill-md.is-readonly .milkdown .milkdown-toolbar,
+.skill-md.is-readonly .milkdown .crepe-placeholder::before {
+  display: none !important;
+}
