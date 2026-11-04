@@ -4,7 +4,7 @@ import { Button, Checkbox, Dropdown, Pagination, Select, TextInput, confirmDialo
 import DirectoryTree, { UNCATEGORIZED } from './DirectoryTree'
 import SkillFormModal from './SkillFormModal'
 import ImportModal from './ImportModal'
-import { createSkill, deleteSkills, descendantIds, folderPath, useSkillState } from './store'
+import { createSkill, deleteSkills, descendantIds, folderPath, sameDirs, sameFiles, useSkillState } from './store'
 import { exportSkills } from './zip'
 import { USERS, userLabel } from './users'
 import type { Skill } from './types'
@@ -31,9 +31,18 @@ export default function SkillLibraryPage({ onOpenSkill }: { onOpenSkill: (id: st
       new Set(
         skills
           .filter((s) => {
+            if (!s.currentVersion) return false
             const published = versions.find((v) => v.skillId === s.id && v.version === s.currentVersion)
-            if (!published) return true
-            return published.name !== s.name || published.displayName !== s.displayName || published.description !== s.description || published.folderId !== s.folderId || published.owner !== s.owner || JSON.stringify(published.files) !== JSON.stringify(s.files) || JSON.stringify([...published.dirs].sort()) !== JSON.stringify([...s.dirs].sort())
+            if (!published) return false
+            return (
+              published.name !== s.name ||
+              published.displayName !== s.displayName ||
+              published.description !== s.description ||
+              published.folderId !== s.folderId ||
+              published.owner !== s.owner ||
+              !sameFiles(published.files, s.files) ||
+              !sameDirs(published.dirs, s.dirs)
+            )
           })
           .map((s) => s.id),
       ),

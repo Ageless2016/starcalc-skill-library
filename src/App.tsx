@@ -87,7 +87,7 @@ export default function App() {
           </div>
           {skillSessions.map((id) => (
             <div key={id} className={activeSkillId === id ? 'h-full' : 'hidden'}>
-              <SkillEditorPage skillId={id} active={active === 'skills' && activeSkillId === id} mode={modes[id] ?? 'view'} onModeChange={(m) => setModes((x) => ({ ...x, [id]: m }))} onBack={() => setActiveSkillId(null)} />
+              <SkillEditorPage skillId={id} active={active === 'skills' && activeSkillId === id} isOpen={activeSkillId === id} mode={modes[id] ?? 'view'} onModeChange={(m) => setModes((x) => ({ ...x, [id]: m }))} onBack={() => setActiveSkillId(null)} />
             </div>
           ))}
         </>

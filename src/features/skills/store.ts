@@ -149,6 +149,20 @@ export function createSkill(input: SkillInput) {
   return skill
 }
 
+export function sameFiles(a: SkillFile[], b: SkillFile[]): boolean {
+  if (a.length !== b.length) return false
+  const sa = [...a].sort((x, y) => x.path.localeCompare(y.path))
+  const sb = [...b].sort((x, y) => x.path.localeCompare(y.path))
+  return sa.every((f, i) => f.path === sb[i].path && f.content === sb[i].content && f.encoding === sb[i].encoding)
+}
+
+export function sameDirs(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false
+  const sa = [...a].sort()
+  const sb = [...b].sort()
+  return sa.every((d, i) => d === sb[i])
+}
+
 export function updateSkillInfo(id: string, patch: SkillInput) {
   commit({
     ...state,
@@ -156,10 +170,10 @@ export function updateSkillInfo(id: string, patch: SkillInput) {
       if (s.id !== id) return s
       const files = s.files.map((f) =>
         f.path === SKILL_MD
-          ? { ...f, content: setFrontmatterFields(f.content, { name: patch.name, description: patch.description }) }
+          ? { ...f, content: setFrontmatterFields(f.content, { name: s.name, description: patch.description }) }
           : f,
       )
-      return { ...s, ...patch, dirs: s.dirs, files, updatedAt: Date.now(), updatedBy: CURRENT_USER.id }
+      return { ...s, ...patch, name: s.name, dirs: s.dirs, files, updatedAt: Date.now(), updatedBy: CURRENT_USER.id }
     }),
   })
 }
@@ -182,7 +196,7 @@ export function saveSkillFiles(id: string, files: SkillFile[], dirs: string[], i
         ? {
             ...s,
             displayName: info?.displayName ?? s.displayName,
-            folderId: info?.folderId ?? s.folderId,
+            folderId: info !== undefined ? info.folderId : s.folderId,
             owner: info?.owner ?? s.owner,
             name: s.name,
             description: typeof fm?.data.description === 'string' ? fm.data.description : s.description,
@@ -202,25 +216,55 @@ export function publishSkill(id: string, files: SkillFile[], dirs: string[], inf
   const now = Date.now()
   const md = files.find((f) => f.path === SKILL_MD)
   const fm = md ? parseFrontmatter(md.content) : null
+  const nextDisplayName = info?.displayName ?? skill.displayName
+  const nextDescription = typeof fm?.data.description === 'string' ? fm.data.description : skill.description
+  const nextFolderId = info !== undefined ? info.folderId : skill.folderId
+  const nextOwner = info?.owner ?? skill.owner
+  const draftChanged =
+    nextDisplayName !== skill.displayName ||
+    nextDescription !== skill.description ||
+    nextFolderId !== skill.folderId ||
+    nextOwner !== skill.owner ||
+    !sameFiles(files, skill.files) ||
+    !sameDirs(dirs, skill.dirs)
+  const updatedAt = draftChanged ? now : skill.updatedAt
+  const updatedBy = draftChanged ? CURRENT_USER.id : skill.updatedBy
   const version: SkillVersion = {
     id: uid(),
     skillId: id,
     version: Math.max(0, ...state.versions.filter((v) => v.skillId === id).map((v) => v.version)) + 1,
     name: skill.name,
-    displayName: info?.displayName ?? skill.displayName,
-    description: typeof fm?.data.description === 'string' ? fm.data.description : skill.description,
-    folderId: info?.folderId ?? skill.folderId,
-    owner: info?.owner ?? skill.owner,
+    displayName: nextDisplayName,
+    description: nextDescription,
+    folderId: nextFolderId,
+    owner: nextOwner,
     files: files.map((f) => ({ ...f })),
     dirs: [...dirs],
-    updatedBy: CURRENT_USER.id,
-    updatedAt: now,
+    updatedBy,
+    updatedAt,
     publishedBy: CURRENT_USER.id,
     publishedAt: now,
   }
   commit({
     ...state,
-    skills: state.skills.map((s) => (s.id === id ? { ...s, name: version.name, displayName: version.displayName, description: version.description, folderId: version.folderId, owner: version.owner, files: version.files, dirs: version.dirs, currentVersion: version.version, publishedBy: CURRENT_USER.id, updatedAt: now, updatedBy: CURRENT_USER.id } : s)),
+    skills: state.skills.map((s) =>
+      s.id === id
+        ? {
+            ...s,
+            name: version.name,
+            displayName: version.displayName,
+            description: version.description,
+            folderId: version.folderId,
+            owner: version.owner,
+            files: version.files,
+            dirs: version.dirs,
+            currentVersion: version.version,
+            publishedBy: CURRENT_USER.id,
+            updatedAt,
+            updatedBy,
+          }
+        : s,
+    ),
     versions: [...state.versions, version],
   })
   return version

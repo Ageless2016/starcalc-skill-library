@@ -11,11 +11,12 @@ interface Props {
   skillName: string
   versions: SkillVersion[]
   currentVersion?: number
+  viewingVersion?: number | null
   onClose: () => void
   onView: (version: SkillVersion) => void
 }
 
-export default function VersionDrawer({ open, skillName, versions, currentVersion, onClose, onView }: Props) {
+export default function VersionDrawer({ open, skillName, versions, currentVersion, viewingVersion, onClose, onView }: Props) {
   const [page, setPage] = useState(1)
   useEffect(() => {
     if (open) setPage(1)
@@ -57,6 +58,7 @@ export default function VersionDrawer({ open, skillName, versions, currentVersio
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-[15px] font-semibold text-ink">v{version.version}</span>
                     {version.version === currentVersion && <span className="px-1.5 h-[20px] leading-[20px] rounded-[2px] text-[11px] bg-[#E8F7EE] text-[#12A150]">线上版本</span>}
+                    {version.version === viewingVersion && <span className="px-1.5 h-[20px] leading-[20px] rounded-[2px] text-[11px] bg-accent-soft text-accent">当前查看</span>}
                   </div>
                   <div className="mt-2 text-[12px] text-muted">发布人：{userLabel(version.publishedBy)}</div>
                   <div className="mt-1 text-[12px] text-muted tabular-nums">发布时间：{formatTime(version.publishedAt)}</div>
